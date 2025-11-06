@@ -1,0 +1,1206 @@
+<html lang="zh-CN"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>家常小灶 - 记录美味生活</title>
+  <!-- Tailwind CSS v3 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome -->
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- 统一的 Tailwind 配置 -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#FF6B8B',
+            secondary: '#5D8CF5',
+            accent: '#FF8E9B',
+            text: '#333333',
+            'text-light': '#666666',
+            'bg-light': '#F9F9F9'
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          boxShadow: {
+            'card': '0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1)',
+            'card-hover': '0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05)',
+          }
+        }
+      }
+    }
+  </script>
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .card-hover {
+        transition: all 0.3s ease;
+      }
+      .card-hover:hover {
+        transform: translateY(-5px);
+      }
+      .tag {
+        @apply px-2 py-1 rounded-full text-xs font-medium mr-1 mb-1;
+      }
+      .input-primary {
+        @apply border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+      }
+      .btn-primary {
+        @apply bg-primary text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-all duration-300 flex items-center justify-center;
+      }
+      .btn-secondary {
+        @apply bg-secondary text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-all duration-300;
+      }
+      .btn-danger {
+        @apply bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-all duration-300;
+      }
+      .nav-btn {
+        @apply transition-colors duration-300;
+      }
+      .nav-btn.active {
+        @apply text-primary;
+      }
+      .lazy-image {
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out;
+      }
+      /* 修复按钮内图标和文字对齐问题 */
+      .btn-with-icon {
+        @apply flex items-center justify-center;
+      }
+      .btn-with-icon i {
+        @apply mr-2;
+      }
+    }
+  </style>
+</head>
+<body class="bg-bg-light text-text">
+  <!-- 页面容器 -->
+  <div class="min-h-screen flex flex-col">
+    <!-- 顶部导航栏 - 修改为固定定位 -->
+    <header class="fixed top-0 left-0 right-0 bg-white shadow-sm py-4 z-10">
+      <div class="container mx-auto px-4 flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-primary">家常小灶</h1>
+        <div class="flex space-x-4">
+          <button id="add-recipe-btn" class="btn-primary btn-with-icon">
+            <i class="fa fa-plus"></i>添加菜谱
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- 主要内容区域 - 添加顶部边距避免被固定的固定的遮挡 -->
+    <main class="flex-grow container mx-auto px-4 pt-24 pb-20">
+      <!-- 主页 -->
+      <section id="home-page" class="space-y-8">
+        <!-- 今日推荐 -->
+        <div>
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold text-primary">今日推荐</h2>
+            <button id="refresh-random" class="btn-secondary btn-with-icon">
+              <i class="fa fa-refresh"></i>随机
+            </button>
+          </div>
+          <div id="random-recipes" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            <!-- 随机菜谱卡片将通过 JavaScript 动态生成 -->
+          </div>
+        </div>
+      </section>
+
+      <!-- 菜谱列表页 -->
+      <section id="recipes-page" class="hidden space-y-6">
+        <!-- 搜索和分类 -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div class="relative w-full md:w-1/3">
+            <input type="text" id="search-input" placeholder="搜索菜谱或食材..." class="input-primary w-full pl-10">
+            <i class="fa fa-search absolute left-3 top-3 text-gray-400"></i>
+          </div>
+          <div class="flex flex-wrap gap-2" id="category-tags">
+            <span class="tag bg-primary text-white" data-category="all">全部</span>
+            <span class="tag bg-accent text-white" data-category="家常菜">家常菜</span>
+            <span class="tag bg-accent text-white" data-category="肉类">肉类</span>
+            <span class="tag bg-accent text-white" data-category="海鲜">海鲜</span>
+            <span class="tag bg-accent text-white" data-category="蔬菜">蔬菜</span>
+            <span class="tag bg-accent text-white" data-category="汤羹">汤羹</span>
+          </div>
+        </div>
+        
+        <!-- 菜谱列表 -->
+        <div id="recipe-list" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+          <!-- 菜谱卡片将通过 JavaScript 动态生成 -->
+        </div>
+      </section>
+
+      <!-- 菜谱详情页 -->
+      <section id="recipe-detail-page" class="hidden">
+        <button id="back-to-recipes" class="btn-secondary btn-with-icon mb-6">
+          <i class="fa fa-arrow-left"></i>返回菜谱列表
+        </button>
+        
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+          <img id="detail-image" src="" alt="菜谱图片" class="w-full h-64 object-cover">
+          <div class="p-6">
+            <h2 id="detail-title" class="text-2xl font-bold mb-4"></h2>
+            <div id="detail-categories" class="flex flex-wrap gap-2 mb-6">
+              <!-- 分类标签将通过 JavaScript 动态生成 -->
+            </div>
+            
+            <div class="space-y-6">
+              <div>
+                <h3 class="text-xl font-bold mb-2">食材</h3>
+                <ul id="detail-ingredients" class="list-disc pl-5 space-y-1">
+                  <!-- 食材列表将通过 JavaScript 动态生成 -->
+                </ul>
+              </div>
+              
+              <div>
+                <h3 class="text-xl font-bold mb-2">步骤</h3>
+                <ol id="detail-steps" class="list-decimal pl-5 space-y-2">
+                  <!-- 步骤列表将通过 JavaScript 动态生成 -->
+                </ol>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 关于页 -->
+      <section id="about-page" class="hidden">
+        <div class="bg-white rounded-xl shadow-md overflow-hidden p-6">
+          <h2 class="text-2xl font-bold mb-4">关于家常小灶</h2>
+          <p class="mb-4">还在为记不住菜谱、纠结三餐吃什么而烦恼？家常小灶专为热爱生活的你打造，用简单实用的功能，让下厨变得轻松又有趣。</p>
+          
+          <h3 class="text-xl font-bold mb-2">功能特点</h3>
+          <ul class="list-disc pl-5 mb-4 space-y-1">
+            <li>添加、查看、编辑和删除菜谱</li>
+            <li>帮你选，告别 "今天吃什么" 难题</li>
+            <li>按分类和关键词搜索菜谱</li>
+            <li>本地数据存储，安全可靠</li>
+            <li>支持图片上传和压缩</li>
+            <li>数据导入导出功能</li>
+          </ul>
+          
+          <div class="flex flex-col sm:flex-row gap-4 mt-6">
+            <button id="export-data" class="btn-primary btn-with-icon">
+              <i class="fa fa-download"></i>导出数据
+            </button>
+            <label for="import-data" class="btn-secondary btn-with-icon cursor-pointer">
+              <i class="fa fa-upload"></i>导入数据
+              <input type="file" id="import-data" accept=".json" class="hidden">
+            </label>
+          </div>
+          
+          <p class="text-sm text-gray-500 mt-8 text-center">开发者 Luger</p>
+          <p class="text-sm text-gray-500 text-center">版本 1.0.0</p>
+        </div>
+      </section>
+    </main>
+
+    <!-- 底部导航栏 - 修改为固定定位 -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white shadow-lg py-2 z-10">
+      <div class="container mx-auto flex justify-around">
+        <button class="nav-btn flex flex-col items-center p-2 w-1/3 text-primary" data-target="home-page">
+          <i class="fa fa-home text-xl"></i>
+          <span class="text-xs mt-1">主页</span>
+        </button>
+        <button class="nav-btn flex flex-col items-center p-2 w-1/3 text-gray-400" data-target="recipes-page">
+          <i class="fa fa-book text-xl"></i>
+          <span class="text-xs mt-1">菜谱</span>
+        </button>
+        <button class="nav-btn flex flex-col items-center p-2 w-1/3 text-gray-400" data-target="about-page">
+          <i class="fa fa-info-circle text-xl"></i>
+          <span class="text-xs mt-1">关于</span>
+        </button>
+      </div>
+    </nav>
+  </div>
+
+  <!-- 添加/编辑菜谱弹窗 -->
+  <div id="recipe-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div class="p-6">
+        <div class="flex justify-between items-center mb-6">
+          <h2 id="modal-title" class="text-2xl font-bold">添加新菜谱</h2>
+          <button id="close-modal" class="text-gray-400 hover:text-gray-600">
+            <i class="fa fa-times text-xl"></i>
+          </button>
+        </div>
+        
+        <form id="recipe-form">
+          <input type="hidden" id="recipe-id">
+          
+          <div class="space-y-4">
+            <div>
+              <label for="recipe-name" class="block text-gray-700 mb-2">菜谱名称</label>
+              <input type="text" id="recipe-name" class="input-primary w-full" placeholder="例如：红烧肉" required="">
+            </div>
+            
+            <div>
+              <label for="recipe-categories" class="block text-gray-700 mb-2">分类（用逗号分隔）</label>
+              <input type="text" id="recipe-categories" class="input-primary w-full" placeholder="例如：家常菜,肉类">
+            </div>
+            
+            <div>
+              <label for="recipe-ingredients" class="block text-gray-700 mb-2">食材（每行一种）</label>
+              <textarea id="recipe-ingredients" rows="4" class="input-primary w-full" placeholder="例如：五花肉 500克
+姜片 3片" required=""></textarea>
+            </div>
+            
+            <div>
+              <label for="recipe-steps" class="block text-gray-700 mb-2">步骤（每行一步）</label>
+              <textarea id="recipe-steps" rows="6" class="input-primary w-full" placeholder="例如：1. 五花肉切块，冷水下锅焯水
+2. 锅中放油，爆香姜片" required=""></textarea>
+            </div>
+            
+            <div class="mb-6">
+              <label for="recipe-image" class="block text-gray-700 mb-2">上传图片</label>
+              <input type="file" id="recipe-image" accept="image/*" class="input-primary w-full">
+              
+              <!-- 图片预览区域 -->
+              <div id="image-preview-container" class="mt-4 hidden">
+                <!-- 上传成功提示 -->
+                <div id="upload-success" class="flex items-center text-green-600 mb-2 hidden">
+                  <i class="fa fa-check-circle mr-2"></i>
+                  <span>上传成功！(已压缩至 <span id="compressed-size">0</span>KB, 目标50KB)</span>
+                </div>
+                
+                <!-- 图片预览 -->
+                <div class="relative w-full bg-gray-100 rounded-lg overflow-hidden">
+                  <img id="preview-image" src="" alt="预览图片" class="w-full h-64 object-contain p-4">
+                  
+                  <!-- 移除图片按钮 -->
+                  <button id="remove-image" class="absolute bottom-2 left-2 bg-white text-red-500 px-3 py-1 rounded-full text-sm flex items-center hidden">
+                    <i class="fa fa-times mr-1"></i> 移除照片
+                  </button>
+                  
+                  <!-- 保存图片按钮 -->
+                  <button id="save-image" class="absolute bottom-2 right-2 bg-primary text-white px-3 py-1 rounded-full text-sm flex items-center hidden">
+                    <i class="fa fa-save mr-1"></i> 保存照片
+                  </button>
+                </div>
+                
+                <!-- 压缩信息 -->
+                <div id="compression-info" class="mt-2 text-sm text-gray-500 hidden">
+                  <i class="fa fa-spinner fa-spin mr-2"></i> 自动压缩中...
+                </div>
+              </div>
+            </div>
+            
+            <div class="flex justify-end">
+              <button type="submit" id="submit-recipe" class="btn-primary btn-with-icon">保存菜谱</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 删除确认弹窗 -->
+  <div id="delete-confirmation-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+      <h2 class="text-xl font-bold mb-4">确认删除</h2>
+      <p class="mb-6">您确定要删除这个菜谱吗？此操作无法撤销。</p>
+      <div class="flex justify-end gap-4">
+        <button id="cancel-delete" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100">取消</button>
+        <button id="confirm-delete" class="btn-danger btn-with-icon">确认删除</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 从本地存储加载菜谱数据
+    function loadRecipesFromLocalStorage() {
+      const savedRecipes = localStorage.getItem('homeCookingRecipes');
+      if (savedRecipes) {
+        return JSON.parse(savedRecipes);
+      }
+      
+      // 默认菜谱数据（已删除，现在返回空数组）
+      return [];
+    }
+
+    // 保存菜谱数据到本地存储
+    function saveRecipesToLocalStorage() {
+      localStorage.setItem('homeCookingRecipes', JSON.stringify(recipes));
+    }
+
+    // 全局变量
+    let recipes = loadRecipesFromLocalStorage();
+    let currentPage = 'home-page';
+    let currentCategory = 'all';
+    let currentSearch = '';
+    let recipeToDelete = null;
+    let compressedImageDataUrl = null;
+
+    // 初始化应用
+    function initApp() {
+      // 预加载图片
+      preloadImages();
+      
+      // 渲染主页随机菜谱
+      renderRandomRecipes();
+      
+      // 渲染菜谱列表
+      renderRecipeList();
+      
+      // 绑定事件
+      bindEvents();
+    }
+    
+    // 预加载图片
+    function preloadImages() {
+      if (recipes.length > 0) {
+        // 预加载前6张图片（当前视图和即将进入视图的图片）
+        const imagesToPreload = recipes.slice(0, 6);
+        imagesToPreload.forEach(recipe => {
+          const img = new Image();
+          img.src = recipe.image;
+          img.onload = function() {
+            console.log(`图片预加载完成: ${recipe.name}`);
+          };
+          img.onerror = function() {
+            console.error(`图片预加载失败: ${recipe.name}`);
+          };
+        });
+      }
+    }
+
+    // 绑定事件
+    function bindEvents() {
+      // 导航按钮点击事件
+      document.querySelectorAll('.nav-btn').forEach(navBtn => {
+        navBtn.addEventListener('click', function() {
+          const targetPage = this.dataset.target;
+          navigateToPage(targetPage);
+          
+          // 更新导航按钮样式
+          document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('text-primary');
+            btn.classList.add('text-gray-400');
+          });
+          this.classList.remove('text-gray-400');
+          this.classList.add('text-primary');
+        });
+      });
+      
+      // 添加菜谱按钮点击事件（顶部）
+      document.getElementById('add-recipe-btn').addEventListener('click', function() {
+        openAddRecipeModal();
+      });
+      
+      // 随机按钮点击事件
+      document.getElementById('refresh-random').addEventListener('click', function() {
+        renderRandomRecipes();
+      });
+      
+      // 关闭弹窗按钮点击事件
+      document.getElementById('close-modal').addEventListener('click', function() {
+        document.getElementById('recipe-modal').classList.add('hidden');
+      });
+      
+      // 图片上传事件
+      document.getElementById('recipe-image').addEventListener('change', handleImageUpload);
+      
+      // 移除图片按钮点击事件
+      document.getElementById('remove-image').addEventListener('click', handleRemoveImage);
+      
+      // 保存图片按钮点击事件
+      document.getElementById('save-image').addEventListener('click', function() {
+        // 触发表单提交
+        document.getElementById('recipe-form').dispatchEvent(new Event('submit'));
+      });
+      
+      // 添加/编辑菜谱表单提交事件
+      document.getElementById('recipe-form').addEventListener('submit', handleRecipeFormSubmit);
+      
+      // 分类标签点击事件
+      document.querySelectorAll('#category-tags .tag').forEach(tag => {
+        tag.addEventListener('click', function() {
+          currentCategory = this.dataset.category;
+          
+          // 更新标签样式
+          document.querySelectorAll('#category-tags .tag').forEach(t => {
+            t.classList.remove('bg-primary');
+            t.classList.add('bg-accent');
+          });
+          this.classList.remove('bg-accent');
+          this.classList.add('bg-primary');
+          
+          // 重新渲染菜谱列表
+          renderRecipeList();
+        });
+      });
+      
+      // 搜索框输入事件
+      document.getElementById('search-input').addEventListener('input', function() {
+        currentSearch = this.value.toLowerCase();
+        renderRecipeList();
+      });
+      
+      // 返回按钮点击事件
+      document.getElementById('back-to-recipes').addEventListener('click', function() {
+        navigateToPage('recipes-page');
+        
+        // 更新导航按钮样式
+        document.querySelectorAll('.nav-btn').forEach(navBtn => {
+          navBtn.classList.remove('text-primary');
+          navBtn.classList.add('text-gray-400');
+        });
+        document.querySelector('[data-target="recipes-page"]').classList.remove('text-gray-400');
+        document.querySelector('[data-target="recipes-page"]').classList.add('text-primary');
+      });
+      
+      // 导出数据按钮点击事件
+      document.getElementById('export-data').addEventListener('click', exportData);
+      
+      // 导入数据按钮点击事件
+      document.getElementById('import-data').addEventListener('change', importData);
+      
+      // 取消删除按钮点击事件
+      document.getElementById('cancel-delete').addEventListener('click', function() {
+        document.getElementById('delete-confirmation-modal').classList.add('hidden');
+        recipeToDelete = null;
+      });
+      
+      // 确认删除按钮点击事件
+      document.getElementById('confirm-delete').addEventListener('click', function() {
+        if (recipeToDelete !== null) {
+          deleteRecipe(recipeToDelete);
+          document.getElementById('delete-confirmation-modal').classList.add('hidden');
+          recipeToDelete = null;
+        }
+      });
+    }
+
+    // 打开添加菜谱弹窗
+    function openAddRecipeModal() {
+      console.log('打开添加菜谱弹窗');
+      // 重置表单
+      document.getElementById('recipe-form').reset();
+      document.getElementById('recipe-id').value = '';
+      document.getElementById('modal-title').textContent = '添加新菜谱';
+      
+      // 重置图片预览区域
+      document.getElementById('preview-image').src = '';
+      document.getElementById('preview-image').classList.add('hidden');
+      document.getElementById('image-preview-container').classList.add('hidden');
+      document.getElementById('upload-success').classList.add('hidden');
+      document.getElementById('compression-info').classList.add('hidden');
+      document.getElementById('remove-image').classList.add('hidden');
+      document.getElementById('save-image').classList.add('hidden');
+      
+      // 重置压缩后的图片数据
+      compressedImageDataUrl = null;
+      
+      // 显示弹窗
+      document.getElementById('recipe-modal').classList.remove('hidden');
+    }
+
+    // 处理图片上传
+    function handleImageUpload(e) {
+      console.log('图片上传事件触发');
+      const file = e.target.files[0];
+      const previewContainer = document.getElementById('image-preview-container');
+      const uploadSuccess = document.getElementById('upload-success');
+      const compressionInfo = document.getElementById('compression-info');
+      const removeBtn = document.getElementById('remove-image');
+      const saveBtn = document.getElementById('save-image');
+      
+      if (file) {
+        console.log('选择了图片文件:', file.name);
+        // 显示预览容器
+        previewContainer.classList.remove('hidden');
+        
+        // 使用FileReader加载图片
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          console.log('图片读取成功');
+          // 更新预览
+          document.getElementById('preview-image').src = e.target.result;
+          document.getElementById('preview-image').style.display = 'block';
+          
+          // 隐藏上传成功提示，显示压缩中提示
+          uploadSuccess.classList.add('hidden');
+          compressionInfo.classList.remove('hidden');
+          
+          // 显示移除按钮
+          removeBtn.classList.remove('hidden');
+          
+          // 隐藏保存按钮
+          saveBtn.classList.add('hidden');
+          
+          // 立即开始压缩（异步进行，不阻塞用户操作）
+          compressImage(file, 640, 480, 0.8, function(compressedDataUrl, compressedSize) {
+            console.log('图片压缩完成，大小:', Math.round(compressedSize / 1024), 'KB');
+            // 存储压缩后的图片数据
+            compressedImageDataUrl = compressedDataUrl;
+            
+            // 更新UI显示压缩信息
+            // 隐藏压缩中提示
+            compressionInfo.classList.add('hidden');
+            
+            // 显示上传成功提示
+            uploadSuccess.classList.remove('hidden');
+            document.getElementById('compressed-size').textContent = Math.round(compressedSize / 1024);
+            
+            // 显示保存按钮
+            saveBtn.classList.remove('hidden');
+          });
+        };
+        
+        reader.onerror = function() {
+          console.error('读取图片失败');
+          alert('读取图片失败，请重试');
+        };
+        
+        reader.readAsDataURL(file);
+      } else {
+        console.log('未选择图片文件');
+        // 隐藏预览容器
+        previewContainer.classList.add('hidden');
+        
+        // 清除压缩后的图片数据
+        compressedImageDataUrl = null;
+      }
+    }
+
+    // 处理移除图片
+    function handleRemoveImage() {
+      console.log('移除图片按钮点击');
+      // 重置图片预览区域
+      document.getElementById('preview-image').src = '';
+      document.getElementById('preview-image').classList.add('hidden');
+      document.getElementById('image-preview-container').classList.add('hidden');
+      document.getElementById('upload-success').classList.add('hidden');
+      document.getElementById('compression-info').classList.add('hidden');
+      document.getElementById('remove-image').classList.add('hidden');
+      document.getElementById('save-image').classList.add('hidden');
+      
+      // 重置文件输入
+      document.getElementById('recipe-image').value = '';
+      
+      // 重置压缩后的图片数据
+      compressedImageDataUrl = null;
+    }
+
+    // 处理菜谱表单提交
+    function handleRecipeFormSubmit(e) {
+      e.preventDefault();
+      console.log('菜谱表单提交');
+      
+      // 获取表单数据
+      const recipeId = document.getElementById('recipe-id').value;
+      const name = document.getElementById('recipe-name').value;
+      const categories = document.getElementById('recipe-categories').value.split(',').map(cat => cat.trim()).filter(cat => cat);
+      const ingredients = document.getElementById('recipe-ingredients').value.split('\n').filter(item => item.trim());
+      const steps = document.getElementById('recipe-steps').value.split('\n').filter(item => item.trim());
+      
+      // 表单验证
+      if (!name || name.trim() === '') {
+        alert('请输入菜谱名称！');
+        return;
+      }
+      
+      if (!ingredients || ingredients.length === 0) {
+        alert('请输入至少一种食材！');
+        return;
+      }
+      
+      if (!steps || steps.length === 0) {
+        alert('请输入至少一个步骤！');
+        return;
+      }
+      
+      // 处理图片
+      const imageInput = document.getElementById('recipe-image');
+      const file = imageInput.files[0];
+      
+      // 显示处理中提示
+      const submitBtn = document.getElementById('submit-recipe');
+      const originalBtnText = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i>保存中...';
+      
+      // 检查是否有图片文件需要处理
+      if (file) {
+        if (compressedImageDataUrl) {
+          // 如果已经有压缩好的图片，直接使用
+          saveRecipe(recipeId, name, categories, ingredients, steps, compressedImageDataUrl);
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalBtnText;
+        } else {
+          // 如果还没有压缩好，显示等待提示
+          const compressionInfo = document.getElementById('compression-info');
+          if (compressionInfo) {
+            compressionInfo.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> 图片压缩中，请稍候...';
+            compressionInfo.classList.remove('hidden');
+          }
+          
+          // 压缩图片
+          compressImage(file, 640, 480, 0.8, function(compressedDataUrl, compressedSize) {
+            saveRecipe(recipeId, name, categories, ingredients, steps, compressedDataUrl);
+            // 恢复按钮状态
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+          });
+        }
+      } else {
+        // 如果没有上传新图片，使用现有图片
+        if (recipeId) {
+          // 编辑模式，使用原图片
+          const recipe = recipes.find(r => r.id == recipeId);
+          // 如果有压缩后的图片数据（用户可能点击了保存图片按钮），使用压缩后的图片
+          if (compressedImageDataUrl) {
+            saveRecipe(recipeId, name, categories, ingredients, steps, compressedImageDataUrl);
+          } else {
+            saveRecipe(recipeId, name, categories, ingredients, steps, recipe.image);
+          }
+        } else {
+          // 添加模式，使用默认图片
+          const defaultImage = "https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/3dcf527824c543188eee65af17cc071a~tplv-a9rns2rl98-image.image?rcl=20251106133107351E7CACAD1185540AEB&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1764999119&x-signature=1OSYyRLRAk3A%2B5PT9Y%2FKXATXzoU%3D";
+          saveRecipe(recipeId, name, categories, ingredients, steps, defaultImage);
+        }
+        // 恢复按钮状态
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+      }
+    }
+
+    // 保存菜谱
+    function saveRecipe(recipeId, name, categories, ingredients, steps, image) {
+      console.log('保存菜谱', recipeId ? '编辑' : '添加');
+      
+      if (recipeId) {
+        // 编辑现有菜谱
+        const index = recipes.findIndex(r => r.id == recipeId);
+        if (index !== -1) {
+          recipes[index] = {
+            ...recipes[index],
+            name,
+            categories: categories.length > 0 ? categories : ['家常菜'],
+            ingredients,
+            steps,
+            image
+          };
+          alert('菜谱更新成功！');
+        }
+      } else {
+        // 添加新菜谱
+        const newRecipe = {
+          id: Date.now(), // 使用时间戳作为唯一ID
+          name,
+          categories: categories.length > 0 ? categories : ['家常菜'],
+          ingredients,
+          steps,
+          image
+        };
+        recipes.unshift(newRecipe);
+        alert('菜谱添加成功！');
+      }
+      
+      // 保存到本地存储
+      saveRecipesToLocalStorage();
+      
+      // 重新渲染菜谱列表
+      renderRecipeList();
+      
+      // 重新渲染主页随机菜谱
+      renderRandomRecipes();
+      
+      // 关闭弹窗
+      document.getElementById('recipe-modal').classList.add('hidden');
+      
+      // 重置表单
+      document.getElementById('recipe-form').reset();
+      
+      // 重置图片预览区域
+      document.getElementById('preview-image').src = '';
+      document.getElementById('preview-image').classList.add('hidden');
+      document.getElementById('image-preview-container').classList.add('hidden');
+      document.getElementById('upload-success').classList.add('hidden');
+      document.getElementById('compression-info').classList.add('hidden');
+      document.getElementById('remove-image').classList.add('hidden');
+      document.getElementById('save-image').classList.add('hidden');
+      
+      // 重置压缩后的图片数据
+      compressedImageDataUrl = null;
+    }
+
+    // 图片压缩函数
+    function compressImage(file, maxWidth, maxHeight, quality, callback) {
+      console.log('开始压缩图片:', file.name);
+      // 检查文件大小，如果超过10MB，直接提示用户
+      if (file.size > 10 * 1024 * 1024) {
+        console.log('图片文件过大，超过10MB');
+        alert('图片文件过大，请选择小于10MB的图片');
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        console.log('图片读取成功');
+        const img = new Image();
+        img.onload = function() {
+          console.log('图片加载成功，尺寸:', img.width, 'x', img.height);
+          // 计算缩放比例
+          const width = img.width;
+          const height = img.height;
+          const scale = Math.min(maxWidth / width, maxHeight / height);
+          
+          // 创建画布
+          const canvas = document.createElement('canvas');
+          const newWidth = Math.round(width * scale);
+          const newHeight = Math.round(height * scale);
+          canvas.width = newWidth;
+          canvas.height = newHeight;
+          
+          console.log('缩放后尺寸:', newWidth, 'x', newHeight);
+          
+          // 绘制图片
+          const ctx = canvas.getContext('2d');
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, newWidth, newHeight);
+          
+          // 优化图片质量
+          optimizeImageQuality(canvas, quality, callback);
+        };
+        
+        img.onerror = function() {
+          console.error('图片加载失败');
+          alert('图片加载失败，请重试');
+        };
+        
+        img.src = e.target.result;
+      };
+      
+      reader.onerror = function() {
+        console.error('读取图片失败');
+        alert('读取图片失败，请重试');
+      };
+      
+      reader.readAsDataURL(file);
+    }
+
+    // 优化图片质量函数
+    function optimizeImageQuality(canvas, initialQuality, callback) {
+      let quality = initialQuality;
+      const maxIterations = 10; // 限制最大尝试次数
+      let iterations = 0;
+      
+      // 使用循环而非递归，提高性能
+      function tryCompress() {
+        if (iterations >= maxIterations) {
+          // 达到最大尝试次数，返回当前质量的结果
+          canvas.toBlob(function(blob) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+              console.log(`图片压缩完成（达到最大尝试次数），大小: ${Math.round(blob.size / 1024)}KB, 质量: ${quality}`);
+              callback(e.target.result, blob.size);
+            };
+            reader.readAsDataURL(blob);
+          }, 'image/jpeg', quality);
+          return;
+        }
+        
+        canvas.toBlob(function(blob) {
+          const fileSizeInKB = Math.round(blob.size / 1024);
+          
+          if (fileSizeInKB <= 50 || quality <= 0.1) {
+            // 达到目标大小或最低质量
+            const reader = new FileReader();
+            reader.onload = function(e) {
+              console.log(`图片压缩完成，大小: ${fileSizeInKB}KB, 质量: ${quality}, 尝试次数: ${iterations}`);
+              callback(e.target.result, blob.size);
+            };
+            reader.readAsDataURL(blob);
+          } else {
+            // 还需要进一步压缩
+            iterations++;
+            // 计算下一次的质量（非线性降低，加快收敛）
+            const overshootRatio = fileSizeInKB / 50;
+            quality = Math.max(0.1, quality - (overshootRatio * 0.1));
+            tryCompress();
+          }
+        }, 'image/jpeg', quality);
+      }
+      
+      tryCompress();
+    }
+
+    // 导出数据
+    function exportData() {
+      const dataStr = JSON.stringify(recipes, null, 2);
+      const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+      
+      const exportFileDefaultName = 'home-cooking-recipes.json';
+      
+      const linkElement = document.createElement('a');
+      linkElement.setAttribute('href', dataUri);
+      linkElement.setAttribute('download', exportFileDefaultName);
+      linkElement.click();
+    }
+
+    // 导入数据
+    function importData(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const importedRecipes = JSON.parse(e.target.result);
+          
+          // 验证导入的数据格式
+          if (Array.isArray(importedRecipes) && importedRecipes.every(r => r.id && r.name && r.ingredients && r.steps)) {
+            // 合并数据（避免重复ID）
+            const existingIds = new Set(recipes.map(r => r.id));
+            const newRecipes = importedRecipes.filter(r => !existingIds.has(r.id));
+            
+            if (newRecipes.length > 0) {
+              recipes.push(...newRecipes);
+              // 保存到本地存储
+              saveRecipesToLocalStorage();
+              renderRecipeList();
+              renderRandomRecipes();
+              alert(`成功导入 ${newRecipes.length} 个菜谱！`);
+            } else {
+              alert('没有发现新的菜谱数据！');
+            }
+          } else {
+            alert('导入的数据格式不正确！');
+          }
+        } catch (error) {
+          alert('导入失败：' + error.message);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // 渲染主页随机菜谱
+    function renderRandomRecipes() {
+      const randomRecipesContainer = document.getElementById('random-recipes');
+      randomRecipesContainer.innerHTML = '';
+      
+      // 如果没有菜谱，显示提示信息
+      if (recipes.length === 0) {
+        const emptyMessage = document.createElement('div');
+        emptyMessage.className = 'col-span-full text-center py-8 text-gray-500';
+        emptyMessage.textContent = '暂无菜谱数据，请添加新菜谱';
+        randomRecipesContainer.appendChild(emptyMessage);
+        return;
+      }
+      
+      // 随机排序菜谱
+      const shuffledRecipes = [...recipes].sort(() => 0.5 - Math.random());
+      
+      // 根据屏幕宽度决定显示的菜谱数量
+      const screenWidth = window.innerWidth;
+      const recipeCount = screenWidth < 640 ? 6 : 8; // 手机端显示6个，其他显示8个
+      
+      // 取前N个菜谱
+      const selectedRecipes = shuffledRecipes.slice(0, recipeCount);
+      
+      // 渲染菜谱卡片
+      selectedRecipes.forEach(recipe => {
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-xl shadow-md overflow-hidden card-hover cursor-pointer';
+        card.innerHTML = `
+          <div class="w-full h-24 bg-gray-200 flex items-center justify-center">
+            <img src="${recipe.image}" alt="${recipe.name}" class="w-full h-full object-cover lazy-image" loading="lazy" onload="this.style.opacity=1" onError="this.src='https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/38529949241a49c0b800031d433390a2~tplv-a9rns2rl98-image.image?rcl=20251106133107351E7CACAD1185540AEB&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1764999118&x-signature=U9QoP0y2G%2B5aW7x9dK8zY7bN8cQ%3D'">
+          </div>
+          <div class="p-2">
+            <h3 class="text-lg font-bold">${recipe.name}</h3>
+          </div>
+        `;
+        
+        // 点击卡片查看详情
+        card.addEventListener('click', () => showRecipeDetail(recipe.id));
+        
+        randomRecipesContainer.appendChild(card);
+      });
+    }
+
+    // 渲染分类导航
+    function renderCategoryNav() {
+      const categoryNav = document.getElementById('category-nav');
+      categoryNav.innerHTML = '';
+      
+      // 获取所有分类
+      const allCategories = new Set();
+      recipes.forEach(recipe => {
+        recipe.categories.forEach(category => allCategories.add(category));
+      });
+      
+      // 添加"全部"分类
+      const allCategory = document.createElement('button');
+      allCategory.className = 'btn-primary';
+      allCategory.textContent = '全部';
+      allCategory.addEventListener('click', () => {
+        navigateToPage('recipes-page');
+        currentCategory = 'all';
+        
+        // 更新标签样式
+        document.querySelectorAll('#category-tags .tag').forEach(tag => {
+          tag.classList.remove('bg-primary');
+          tag.classList.add('bg-accent');
+        });
+        document.querySelector('[data-category="all"]').classList.remove('bg-accent');
+        document.querySelector('[data-category="all"]').classList.add('bg-primary');
+        
+        renderRecipeList();
+      });
+      categoryNav.appendChild(allCategory);
+      
+      // 添加其他分类
+      Array.from(allCategories).forEach(category => {
+        const categoryBtn = document.createElement('button');
+        categoryBtn.className = 'btn-secondary';
+        categoryBtn.textContent = category;
+        categoryBtn.addEventListener('click', () => {
+          navigateToPage('recipes-page');
+          currentCategory = category;
+          
+          // 更新标签样式
+          document.querySelectorAll('#category-tags .tag').forEach(tag => {
+            tag.classList.remove('bg-primary');
+            tag.classList.add('bg-accent');
+          });
+          
+          // 找到对应的标签并高亮
+          const matchingTag = document.querySelector(`#category-tags .tag[data-category="${category}"]`);
+          if (matchingTag) {
+            matchingTag.classList.remove('bg-accent');
+            matchingTag.classList.add('bg-primary');
+          } else {
+            // 如果没有对应的标签，高亮"全部"
+            document.querySelector('[data-category="all"]').classList.remove('bg-accent');
+            document.querySelector('[data-category="all"]').classList.add('bg-primary');
+          }
+          
+          renderRecipeList();
+        });
+        categoryNav.appendChild(categoryBtn);
+      });
+    }
+
+    // 渲染菜谱列表
+    function renderRecipeList() {
+      const recipeListContainer = document.getElementById('recipe-list');
+      recipeListContainer.innerHTML = '';
+      
+      // 筛选菜谱
+      let filteredRecipes = recipes;
+      
+      // 按分类筛选
+      if (currentCategory !== 'all') {
+        filteredRecipes = filteredRecipes.filter(recipe => 
+          recipe.categories.some(category => category.includes(currentCategory))
+        );
+      }
+      
+      // 按搜索关键词筛选
+      if (currentSearch) {
+        filteredRecipes = filteredRecipes.filter(recipe => 
+          recipe.name.toLowerCase().includes(currentSearch) || 
+          recipe.ingredients.some(ingredient => ingredient.toLowerCase().includes(currentSearch))
+        );
+      }
+      
+      // 如果没有匹配的菜谱
+      if (filteredRecipes.length === 0) {
+        const emptyMessage = document.createElement('div');
+        emptyMessage.className = 'col-span-full text-center py-8 text-gray-500';
+        emptyMessage.textContent = '没有找到匹配的菜谱';
+        recipeListContainer.appendChild(emptyMessage);
+        return;
+      }
+      
+      // 渲染菜谱卡片
+      filteredRecipes.forEach(recipe => {
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-xl shadow-md overflow-hidden card-hover cursor-pointer relative';
+        card.innerHTML = `
+          <div class="w-full h-24 bg-gray-200 flex items-center justify-center">
+            <img src="${recipe.image}" alt="${recipe.name}" class="w-full h-full object-cover lazy-image" loading="lazy" onload="this.style.opacity=1" onError="this.src='https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/38529949241a49c0b800031d433390a2~tplv-a9rns2rl98-image.image?rcl=20251106133107351E7CACAD1185540AEB&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1764999118&x-signature=U9QoP0y2G%2B5aW7x9dK8zY7bN8cQ%3D'">
+          </div>
+          <div class="p-2">
+            <h3 class="text-lg font-bold">${recipe.name}</h3>
+            <div class="flex flex-wrap mt-2">
+              ${recipe.categories.slice(0, 2).map(category => 
+                `<span class="tag bg-accent text-white">${category}</span>`
+              ).join('')}
+            </div>
+          </div>
+          <div class="absolute top-2 right-2 flex space-x-1">
+            <button class="edit-btn bg-blue-500 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md hover:bg-blue-600 transition-colors duration-300">
+              <i class="fa fa-pencil"></i>
+            </button>
+            <button class="delete-btn bg-red-500 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md hover:bg-red-600 transition-colors duration-300">
+              <i class="fa fa-trash"></i>
+            </button>
+          </div>
+        `;
+        
+        // 点击卡片查看详情
+        card.addEventListener('click', (e) => {
+          // 如果点击的是删除按钮或编辑按钮，则不执行查看详情
+          if (!e.target.closest('.delete-btn') && !e.target.closest('.edit-btn')) {
+            showRecipeDetail(recipe.id);
+          }
+        });
+        
+        // 编辑按钮点击事件
+        const editBtn = card.querySelector('.edit-btn');
+        editBtn.addEventListener('click', (e) => {
+          e.stopPropagation(); // 阻止事件冒泡
+          editRecipe(recipe.id);
+        });
+        
+        // 删除按钮点击事件
+        const deleteBtn = card.querySelector('.delete-btn');
+        deleteBtn.addEventListener('click', (e) => {
+          e.stopPropagation(); // 阻止事件冒泡
+          showDeleteConfirmation(recipe.id);
+        });
+        
+        recipeListContainer.appendChild(card);
+      });
+    }
+
+    // 显示菜谱详情
+    function showRecipeDetail(recipeId) {
+      const recipe = recipes.find(r => r.id === recipeId);
+      if (!recipe) return;
+      
+      // 填充详情页数据
+      document.getElementById('detail-image').src = recipe.image;
+      document.getElementById('detail-title').textContent = recipe.name;
+      
+      // 渲染分类标签
+      const categoriesContainer = document.getElementById('detail-categories');
+      categoriesContainer.innerHTML = '';
+      recipe.categories.forEach(category => {
+        const tag = document.createElement('span');
+        tag.className = 'tag bg-accent text-white';
+        tag.textContent = category;
+        categoriesContainer.appendChild(tag);
+      });
+      
+      // 渲染食材列表
+      const ingredientsContainer = document.getElementById('detail-ingredients');
+      ingredientsContainer.innerHTML = '';
+      recipe.ingredients.forEach(ingredient => {
+        const li = document.createElement('li');
+        li.textContent = ingredient;
+        ingredientsContainer.appendChild(li);
+      });
+      
+      // 渲染步骤列表
+      const stepsContainer = document.getElementById('detail-steps');
+      stepsContainer.innerHTML = '';
+      recipe.steps.forEach(step => {
+        const li = document.createElement('li');
+        li.textContent = step;
+        stepsContainer.appendChild(li);
+      });
+      
+      // 导航到详情页
+      navigateToPage('recipe-detail-page');
+    }
+
+    // 编辑菜谱
+    function editRecipe(recipeId) {
+      const recipe = recipes.find(r => r.id === recipeId);
+      if (!recipe) return;
+      
+      console.log('编辑菜谱:', recipe.name);
+      
+      // 填充表单数据
+      document.getElementById('recipe-id').value = recipe.id;
+      document.getElementById('recipe-name').value = recipe.name;
+      document.getElementById('recipe-categories').value = recipe.categories.join(', ');
+      document.getElementById('recipe-ingredients').value = recipe.ingredients.join('\n');
+      document.getElementById('recipe-steps').value = recipe.steps.join('\n');
+      
+      // 显示图片预览区域
+      const previewContainer = document.getElementById('image-preview-container');
+      const uploadSuccess = document.getElementById('upload-success');
+      const compressionInfo = document.getElementById('compression-info');
+      const removeBtn = document.getElementById('remove-image');
+      const saveBtn = document.getElementById('save-image');
+      
+      // 更新预览
+      document.getElementById('preview-image').src = recipe.image;
+      document.getElementById('preview-image').style.display = 'block';
+      
+      // 显示预览容器
+      previewContainer.classList.remove('hidden');
+      
+      // 显示上传成功提示
+      uploadSuccess.classList.remove('hidden');
+      document.getElementById('compressed-size').textContent = '50';
+      
+      // 隐藏压缩中提示
+      compressionInfo.classList.add('hidden');
+      
+      // 显示移除按钮
+      removeBtn.classList.remove('hidden');
+      
+      // 隐藏保存按钮（在编辑模式下，用户需要先上传新图片才能保存）
+      saveBtn.classList.add('hidden');
+      
+      // 重置文件输入
+      document.getElementById('recipe-image').value = '';
+      
+      // 重置压缩后的图片数据
+      compressedImageDataUrl = null;
+      
+      // 更新弹窗标题
+      document.getElementById('modal-title').textContent = '编辑菜谱';
+      
+      // 显示弹窗
+      document.getElementById('recipe-modal').classList.remove('hidden');
+    }
+
+    // 显示删除确认对话框
+    function showDeleteConfirmation(recipeId) {
+      recipeToDelete = recipeId;
+      document.getElementById('delete-confirmation-modal').classList.remove('hidden');
+    }
+
+    // 删除菜谱
+    function deleteRecipe(recipeId) {
+      const index = recipes.findIndex(recipe => recipe.id === recipeId);
+      if (index !== -1) {
+        recipes.splice(index, 1);
+        // 保存到本地存储
+        saveRecipesToLocalStorage();
+        renderRecipeList();
+        renderRandomRecipes();
+        alert('菜谱删除成功！');
+      }
+    }
+
+    // 导航到指定页面
+    function navigateToPage(pageId) {
+      // 隐藏所有页面
+      document.querySelectorAll('main > section').forEach(page => {
+        page.classList.add('hidden');
+      });
+      
+      // 显示目标页面
+      document.getElementById(pageId).classList.remove('hidden');
+      
+      // 更新当前页面
+      currentPage = pageId;
+    }
+
+    // 页面加载完成后初始化应用
+    document.addEventListener('DOMContentLoaded', initApp);
+  </script>
+
+
+</body></html>

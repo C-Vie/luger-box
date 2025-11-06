@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>主页</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- 统一的 Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#64748b',
+                        accent: '#f43f5e',
+                        neutral: '#f1f5f9',
+                        'neutral-dark': '#334155'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-in': 'slideIn 0.5s ease-in-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideIn: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .transition-all-300 {
+                transition: all 300ms ease-in-out;
+            }
+        }
+    </style>
+</head>
+<body class="bg-neutral min-h-screen flex flex-col items-center justify-center p-4 animate-fade-in">
+    <div class="text-center max-w-md w-full">
+        <h1 class="text-4xl font-bold text-neutral-dark mb-8 text-shadow animate-slide-in">Luger的工具箱</h1>
+        
+        <div class="flex flex-col gap-4 animate-slide-in" style="animation-delay: 0.2s;">
+            <a href="./src/page1.html" class="bg-primary hover:bg-primary/90 text-white font-medium py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all-300 flex items-center justify-center gap-2">
+                <i class="fa fa-file-text-o" aria-hidden="true"></i>
+                <span>跳转到打卡集小红花</span>
+            </a>
+            
+            <a href="./src/page2.html" class="bg-secondary hover:bg-secondary/90 text-white font-medium py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all-300 flex items-center justify-center gap-2">
+                <i class="fa fa-file-text" aria-hidden="true"></i>
+                <span>跳转到家常小灶</span>
+            </a>
+        </div>
+        
+        <div class="mt-12 text-neutral-dark/60 text-sm">
+            <p>点击上方链接跳转到对应的页面</p>
+        </div>
+    </div>
+</body>
+</html>
